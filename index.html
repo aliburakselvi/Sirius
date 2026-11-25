@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sirius">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f4f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<title>Sirius</title>
+<style>
+  /* Taslak yerleşim: tek sütun, üstte durum, ortada görev kutusu, altta sonuç ve geçmiş.
+     Renkler: 5 jeton. Yazı: sistem yazı tipi (çevrimdışı da çalışsın). */
+  :root {
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --line: #d9dee6;
+    --text: #101828;
+    --muted: #5b6475;
+    --accent: #0f766e;
+    --accent-ink: #ffffff;
+    --warn: #b45309;
+    --bad: #b42318;
+    --good: #067647;
+    --font: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1117; --surface: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
+      --accent: #2dd4bf; --accent-ink: #04201c; --warn: #f0a24b; --bad: #ff8b7e; --good: #56d19a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1117; --surface: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
+    --accent: #2dd4bf; --accent-ink: #04201c; --warn: #f0a24b; --bad: #ff8b7e; --good: #56d19a;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.5;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: max(16px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
+  h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.01em; }
+  .badge { font-size: 0.75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  label { display: block; font-size: 0.8125rem; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em; }
+  input[type=text], input[type=url], input[type=password], textarea {
+    width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; min-width: 0;
+  }
+  textarea { min-height: 112px; resize: vertical; }
+  input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, .toggle:focus-within {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .field + .field { margin-top: 12px; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  button {
+    font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 12px 18px; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); min-height: 44px;
+  }
+  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
+  button:disabled { opacity: 0.55; cursor: default; }
+  .toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; min-height: 44px; }
+  .toggle input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
+  details > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 8px; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary::after { content: "Aç"; font-weight: 400; color: var(--muted); font-size: 0.8125rem; }
+  details[open] > summary::after { content: "Kapat"; }
+  details .inner { margin-top: 14px; }
+  .hint { color: var(--muted); font-size: 0.8125rem; margin: 8px 0 0; }
+  .status { display: flex; align-items: center; gap: 10px; color: var(--muted); }
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+  .result h3 { margin: 18px 0 6px; font-size: 1rem; }
+  .result h3:first-child { margin-top: 0; }
+  .result p { margin: 8px 0; overflow-wrap: anywhere; }
+  .result ul { margin: 8px 0; padding-left: 20px; }
+  .result li { margin: 4px 0; overflow-wrap: anywhere; }
+  .result a { color: var(--accent); word-break: break-all; }
+  .err { color: var(--bad); font-weight: 600; margin: 0 0 6px; }
+  .meta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; margin: 8px 0 0; }
+  .hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+  .hist li + li { border-top: 1px solid var(--line); }
+  .hist button { width: 100%; text-align: left; background: transparent; color: var(--text); font-weight: 400; border-radius: 0; padding: 12px 0; display: flex; flex-direction: column; gap: 2px; }
+  .hist .g { overflow-wrap: anywhere; }
+  .hist .s { font-size: 0.75rem; color: var(--muted); }
+  .hist .s.done { color: var(--good); }
+  .hist .s.failed { color: var(--bad); }
+  .hist .s.running { color: var(--warn); }
+  h2 { margin: 0 0 8px; font-size: 0.8125rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Sirius</h1>
+    <span class="badge">taslak</span>
+  </header>
+
+  <details id="conn" class="card">
+    <summary>Bağlantı</summary>
+    <div class="inner">
+      <div class="field">
+        <label for="fnUrl">Fonksiyon adresi</label>
+        <input id="fnUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="https://…supabase.co/functions/v1/sirius-agent">
+      </div>
+      <div class="field">
+        <label for="fnKey">Erişim şifresi</label>
+        <input id="fnKey" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button id="saveConn" type="button">Kaydet</button>
+        <span id="connNote" class="hint" style="margin:0"></span>
+      </div>
+      <p class="hint">Adres ve şifre yalnızca bu cihazın tarayıcısında saklanır.</p>
+    </div>
+  </details>
+
+  <section class="card">
+    <div class="field">
+      <label for="goal">Görev</label>
+      <textarea id="goal" placeholder="Örn. Konya'daki sanayi yatırımlarını araştır"></textarea>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <label class="toggle" for="useWeb" style="margin:0; color:var(--text); font-size:1rem">
+        <input id="useWeb" type="checkbox"> Web araştırması
+      </label>
+      <button id="run" type="button">Çalıştır</button>
+    </div>
+  </section>
+
+  <section id="statusCard" class="card" hidden>
+    <div class="status"><span class="spinner" aria-hidden="true"></span><span id="statusText" role="status"></span></div>
+  </section>
+
+  <section id="outCard" class="card" hidden>
+    <div id="out" class="result"></div>
+    <p id="outMeta" class="meta"></p>
+    <div class="row" style="margin-top:14px">
+      <button id="copy" type="button" class="ghost">Kopyala</button>
+      <button id="resume" type="button" hidden>Kaldığı yerden devam et</button>
+    </div>
+  </section>
+
+  <section id="histCard" class="card" hidden>
+    <h2>Son görevler</h2>
+    <ul id="hist" class="hist"></ul>
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var LS = { url: "sirius.url", key: "sirius.key", hist: "sirius.hist" };
+  var STEP_TR = { manager: "Yönetici", research: "Araştırma", analyst: "Analist", auditor: "Denetçi" };
+  var current = null; // ekranda gösterilen görev {id, goal, web, status, result, at}
+  var busy = false;
+
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* sessizce geç */ } }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function inline(s) {
+    s = esc(s);
+    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*([^*\s][^*]*)\*/g, "<em>$1</em>");
+    s = s.replace(/(https:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+    return s;
+  }
+  function render(text) {
+    var html = "", inList = false;
+    String(text).split("\n").forEach(function (raw) {
+      var l = raw.replace(/\s+$/, "");
+      var li = l.match(/^\s*[*-]\s+(.*)$/);
+      if (li) {
+        if (!inList) { html += "<ul>"; inList = true; }
+        html += "<li>" + inline(li[1]) + "</li>";
+        return;
+      }
+      if (inList) { html += "</ul>"; inList = false; }
+      if (!l.trim()) return;
+      var h = l.match(/^#{1,4}\s+(.*)$/);
+      html += h ? "<h3>" + inline(h[1]) + "</h3>" : "<p>" + inline(l) + "</p>";
+    });
+    if (inList) html += "</ul>";
+    return html;
+  }
+
+  function loadHist() {
+    try { var a = JSON.parse(lsGet(LS.hist) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+  }
+  function saveHist(list) { lsSet(LS.hist, JSON.stringify(list.slice(0, 8))); }
+  function upsertHist(item) {
+    var list = loadHist().filter(function (x) { return x.id !== item.id; });
+    list.unshift(item);
+    saveHist(list);
+    drawHist();
+  }
+  function drawHist() {
+    var list = loadHist(), ul = $("hist");
+    ul.textContent = "";
+    $("histCard").hidden = list.length === 0;
+    list.forEach(function (it) {
+      var li = document.createElement("li");
+      var b = document.createElement("button");
+      b.type = "button";
+      var g = document.createElement("span"); g.className = "g"; g.textContent = it.goal;
+      var s = document.createElement("span"); s.className = "s " + it.status;
+      var label = it.status === "done" ? "Tamamlandı" : it.status === "failed" ? "Yarım kaldı" : "Çalışıyor";
+      s.textContent = label + " · " + new Date(it.at).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+      b.appendChild(g); b.appendChild(s);
+      b.addEventListener("click", function () { show(it); window.scrollTo({ top: 0, behavior: "smooth" }); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+  }
+
+  function show(it) {
+    current = it;
+    $("outCard").hidden = false;
+    var out = $("out");
+    if (it.status === "done") {
+      out.innerHTML = render(it.result || "");
+      $("resume").hidden = true;
+      $("copy").hidden = false;
+    } else {
+      var p = document.createElement("p"); p.className = "err";
+      p.textContent = it.error || "Görev yarım kaldı.";
+      out.textContent = ""; out.appendChild(p);
+      var d = document.createElement("p");
+      d.textContent = "Biten aşamalar kaydedildi. Devam edince yalnızca kalan aşamalar çalışır.";
+      out.appendChild(d);
+      $("resume").hidden = !it.id;
+      $("copy").hidden = true;
+    }
+    $("outMeta").textContent = it.id ? "görev no: " + it.id : "";
+  }
+
+  function setBusy(on, text) {
+    busy = on;
+    $("run").disabled = on; $("resume").disabled = on;
+    $("statusCard").hidden = !on;
+    if (on) $("statusText").textContent = text;
+  }
+
+  var timer = null;
+  function startTimer(prefix) {
+    var t0 = Date.now();
+    function tick() {
+      var s = Math.round((Date.now() - t0) / 1000);
+      $("statusText").textContent = prefix + " " + s + " sn";
+    }
+    tick(); timer = setInterval(tick, 1000);
+  }
+  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+  function conn() {
+    return { url: ($("fnUrl").value || "").trim(), key: ($("fnKey").value || "").trim() };
+  }
+
+  async function call(payload, goalForHist) {
+    var c = conn();
+    if (!/^https:\/\//.test(c.url) || !c.key) {
+      $("conn").open = true;
+      $("connNote").textContent = "Önce adres ve şifreyi gir.";
+      return;
+    }
+    if (busy) return;
+    setBusy(true, "");
+    startTimer("Çalışıyor, yönetici → araştırma → analist → denetçi.");
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, 170000);
+    var body = Object.assign({ key: c.key }, payload);
+    try {
+      var res = await fetch(c.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+      });
+      var data;
+      try { data = await res.json(); } catch (e) { data = null; }
+      if (!data) throw new Error("Fonksiyondan okunabilir cevap gelmedi (HTTP " + res.status + ").");
+      if (data.ok) {
+        var item = { id: data.task_id, goal: goalForHist, web: !!payload.use_web, status: "done", result: data.result, at: Date.now() };
+        upsertHist(item); show(item);
+      } else if (data.task_id) {
+        var failed = data.failed_step ? (STEP_TR[data.failed_step] || data.failed_step) + " aşamasında hata: " : "";
+        var it2 = { id: data.task_id, goal: goalForHist, web: !!payload.use_web, status: "failed", error: failed + (data.error || "bilinmeyen hata"), at: Date.now() };
+        upsertHist(it2); show(it2);
+      } else {
+        throw new Error(data.error || ("HTTP " + res.status));
+      }
+    } catch (e) {
+      var msg = e && e.name === "AbortError"
+        ? "Zaman aşımı. Görev sunucuda sürüyor olabilir, birazdan 'Son görevler'den kontrol et."
+        : (e && e.message ? e.message : "Bağlantı kurulamadı.");
+      if (e instanceof TypeError) msg = "Bağlantı kurulamadı. Adresi ve internetini kontrol et.";
+      show({ status: "failed", error: msg, goal: goalForHist, at: Date.now() });
+    } finally {
+      clearTimeout(to); stopTimer(); setBusy(false);
+    }
+  }
+
+  $("run").addEventListener("click", function () {
+    var goal = ($("goal").value || "").trim();
+    if (!goal) { $("goal").focus(); return; }
+    call({ goal: goal, use_web: $("useWeb").checked }, goal);
+  });
+  $("resume").addEventListener("click", function () {
+    if (current && current.id) call({ task_id: current.id, use_web: !!current.web }, current.goal);
+  });
+  $("copy").addEventListener("click", async function () {
+    if (!current || !current.result) return;
+    var btn = $("copy");
+    try { await navigator.clipboard.writeText(current.result); btn.textContent = "Kopyalandı"; }
+    catch (e) {
+      var r = document.createRange(); r.selectNodeContents($("out"));
+      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      btn.textContent = "Seçildi, kopyala";
+    }
+    setTimeout(function () { btn.textContent = "Kopyala"; }, 2000);
+  });
+  $("saveConn").addEventListener("click", function () {
+    var c = conn();
+    if (!/^https:\/\//.test(c.url) || !c.key) { $("connNote").textContent = "Adres https ile başlamalı, şifre boş olmamalı."; return; }
+    lsSet(LS.url, c.url); lsSet(LS.key, c.key);
+    $("connNote").textContent = "Kaydedildi.";
+    $("conn").open = false;
+  });
+
+  var u = lsGet(LS.url), k = lsGet(LS.key);
+  if (u) $("fnUrl").value = u;
+  if (k) $("fnKey").value = k;
+  $("conn").open = !(u && k);
+  drawHist();
+})();
+</script>
+</body>
+</html>
