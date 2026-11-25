@@ -6,351 +6,317 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Sirius">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f2f4f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0d1117" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0b1220">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>Sirius</title>
 <style>
-  /* Taslak yerleşim: tek sütun, üstte durum, ortada görev kutusu, altta sonuç ve geçmiş.
-     Renkler: 5 jeton. Yazı: sistem yazı tipi (çevrimdışı da çalışsın). */
   :root {
-    --bg: #f2f4f7;
-    --surface: #ffffff;
-    --line: #d9dee6;
-    --text: #101828;
-    --muted: #5b6475;
-    --accent: #0f766e;
-    --accent-ink: #ffffff;
-    --warn: #b45309;
-    --bad: #b42318;
-    --good: #067647;
+    --bg: #0b1220; --panel: #131c2e; --line: #243049; --text: #e8eefc; --muted: #8fa0c0;
+    --glow: #38e1c6; --glow2: #6aa8ff; --warn: #ffb454; --bad: #ff7b72; --body: #1c2a44; --body2: #2a3d63;
     --font: ui-sans-serif, -apple-system, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
-    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    color-scheme: light;
   }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0d1117; --surface: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
-      --accent: #2dd4bf; --accent-ink: #04201c; --warn: #f0a24b; --bad: #ff8b7e; --good: #56d19a;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0d1117; --surface: #161b22; --line: #2a313c; --text: #e6edf3; --muted: #8b949e;
-    --accent: #2dd4bf; --accent-ink: #04201c; --warn: #f0a24b; --bad: #ff8b7e; --good: #56d19a;
-    color-scheme: dark;
-  }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
   body {
-    background: var(--bg); color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.5;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    padding-top: max(16px, env(safe-area-inset-top, 0px));
-    padding-bottom: max(32px, env(safe-area-inset-bottom, 0px));
-    -webkit-text-size-adjust: 100%;
+    background: radial-gradient(120% 70% at 50% 0%, #15233d 0%, var(--bg) 60%);
+    color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.45;
+    display: flex; flex-direction: column; height: 100dvh; overflow: hidden;
+    padding-top: env(safe-area-inset-top, 0px);
   }
-  main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 4px; }
-  h1 { margin: 0; font-size: 1.5rem; letter-spacing: 0.01em; }
-  .badge { font-size: 0.75rem; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; }
-  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
-  label { display: block; font-size: 0.8125rem; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.02em; }
-  input[type=text], input[type=url], input[type=password], textarea {
-    width: 100%; font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line);
-    border-radius: 10px; padding: 12px; min-width: 0;
+  .stage { flex: 0 0 auto; display: flex; justify-content: center; padding: 6px 16px 0; }
+  .stage svg { width: min(46vw, 210px); height: auto; max-height: 34dvh; overflow: visible; }
+  .status { text-align: center; color: var(--muted); font-size: 0.8125rem; letter-spacing: 0.03em; min-height: 1.4em; padding: 2px 16px 6px; }
+  .log {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 8px max(16px, env(safe-area-inset-left, 0px)) 8px max(16px, env(safe-area-inset-right, 0px));
+    display: flex; flex-direction: column; gap: 10px; max-width: 720px; width: 100%; margin: 0 auto;
   }
-  textarea { min-height: 112px; resize: vertical; }
-  input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, .toggle:focus-within {
-    outline: 2px solid var(--accent); outline-offset: 2px;
+  .msg { max-width: 88%; padding: 10px 14px; border-radius: 16px; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: #1f3b66; border-bottom-right-radius: 5px; }
+  .msg.bot { align-self: flex-start; background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+  .msg.err { align-self: center; color: var(--bad); background: transparent; text-align: center; font-size: 0.875rem; }
+  .msg a { color: var(--glow2); }
+  .bar {
+    flex: 0 0 auto; max-width: 720px; width: 100%; margin: 0 auto;
+    padding: 8px max(12px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+    background: linear-gradient(to top, var(--bg) 70%, transparent);
   }
-  .field + .field { margin-top: 12px; }
-  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-  button {
-    font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 12px 18px; cursor: pointer;
-    background: var(--accent); color: var(--accent-ink); min-height: 44px;
+  .chips { display: flex; gap: 8px; margin-bottom: 8px; }
+  .chip { font: inherit; font-size: 0.8125rem; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; min-height: 36px; cursor: pointer; }
+  .chip[aria-pressed="true"] { color: #04201c; background: var(--glow); border-color: var(--glow); font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: flex-end; }
+  textarea {
+    flex: 1 1 auto; min-width: 0; resize: none; font: inherit; font-size: 16px; color: var(--text);
+    background: var(--panel); border: 1px solid var(--line); border-radius: 22px; padding: 12px 16px; max-height: 120px; min-height: 46px;
   }
-  button.ghost { background: transparent; color: var(--text); border: 1px solid var(--line); font-weight: 500; }
-  button:disabled { opacity: 0.55; cursor: default; }
-  .toggle { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; min-height: 44px; }
-  .toggle input { width: 22px; height: 22px; accent-color: var(--accent); margin: 0; }
-  details > summary { cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; gap: 8px; }
-  details > summary::-webkit-details-marker { display: none; }
-  details > summary::after { content: "Aç"; font-weight: 400; color: var(--muted); font-size: 0.8125rem; }
-  details[open] > summary::after { content: "Kapat"; }
-  details .inner { margin-top: 14px; }
-  .hint { color: var(--muted); font-size: 0.8125rem; margin: 8px 0 0; }
-  .status { display: flex; align-items: center; gap: 10px; color: var(--muted); }
-  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin 0.9s linear infinite; flex: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
-  .result h3 { margin: 18px 0 6px; font-size: 1rem; }
-  .result h3:first-child { margin-top: 0; }
-  .result p { margin: 8px 0; overflow-wrap: anywhere; }
-  .result ul { margin: 8px 0; padding-left: 20px; }
-  .result li { margin: 4px 0; overflow-wrap: anywhere; }
-  .result a { color: var(--accent); word-break: break-all; }
-  .err { color: var(--bad); font-weight: 600; margin: 0 0 6px; }
-  .meta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; margin: 8px 0 0; }
-  .hist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-  .hist li + li { border-top: 1px solid var(--line); }
-  .hist button { width: 100%; text-align: left; background: transparent; color: var(--text); font-weight: 400; border-radius: 0; padding: 12px 0; display: flex; flex-direction: column; gap: 2px; }
-  .hist .g { overflow-wrap: anywhere; }
-  .hist .s { font-size: 0.75rem; color: var(--muted); }
-  .hist .s.done { color: var(--good); }
-  .hist .s.failed { color: var(--bad); }
-  .hist .s.running { color: var(--warn); }
-  h2 { margin: 0 0 8px; font-size: 0.8125rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  textarea:focus-visible, button:focus-visible { outline: 2px solid var(--glow2); outline-offset: 2px; }
+  .btn { flex: none; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; display: grid; place-items: center; }
+  .btn svg { width: 22px; height: 22px; }
+  .btn.send { background: var(--glow); border-color: var(--glow); color: #04201c; }
+  .btn.mic[aria-pressed="true"] { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .btn:disabled { opacity: 0.5; }
+  .gate { position: fixed; inset: 0; z-index: 5; background: rgba(11,18,32,0.96); display: none; place-items: center; padding: 24px; text-align: center; }
+  .gate.on { display: grid; }
+  .gate p { max-width: 320px; color: var(--muted); }
+  .gate strong { color: var(--text); }
+
+  /* karakter */
+  .float { animation: float 4s ease-in-out infinite; transform-origin: 50% 100%; }
+  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
+  @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96.5% { transform: scaleY(0.08); } }
+  .mouth { transform-box: fill-box; transform-origin: center; transition: transform 0.08s; }
+  .glow { fill: var(--glow); transition: fill 0.3s; }
+  .state-listening .glow { fill: var(--bad); }
+  .state-thinking .glow { fill: var(--warn); }
+  .state-thinking .eyes { animation: scan 1.2s ease-in-out infinite; }
+  @keyframes scan { 0%,100% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
+  .state-speaking .armL { animation: wave 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: 90% 10%; }
+  .state-speaking .armR { animation: wave 0.9s ease-in-out infinite reverse; transform-box: fill-box; transform-origin: 10% 10%; }
+  @keyframes wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-14deg); } }
+  .state-listening .head { animation: tilt 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  @keyframes tilt { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(3deg); } }
+  .halo { opacity: 0.18; transition: opacity 0.3s; }
+  .state-speaking .halo, .state-listening .halo { opacity: 0.45; }
+  @media (prefers-reduced-motion: reduce) { .float, .eye, .state-thinking .eyes, .state-speaking .armL, .state-speaking .armR, .state-listening .head { animation: none; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Sirius</h1>
-    <span class="badge">taslak</span>
-  </header>
-
-  <details id="conn" class="card">
-    <summary>Bağlantı</summary>
-    <div class="inner">
-      <div class="field">
-        <label for="fnUrl">Fonksiyon adresi</label>
-        <input id="fnUrl" type="url" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" value="https://qtrwimtdslettptndhyt.supabase.co/functions/v1/sirius-agent" placeholder="https://…supabase.co/functions/v1/sirius-agent">
-      </div>
-      <div class="field">
-        <label for="fnKey">Erişim şifresi</label>
-        <input id="fnKey" type="password" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off">
-      </div>
-      <div class="row" style="margin-top:14px">
-        <button id="saveConn" type="button">Kaydet</button>
-        <span id="connNote" class="hint" style="margin:0"></span>
-      </div>
-      <p class="hint">Adres ve şifre yalnızca bu cihazın tarayıcısında saklanır.</p>
-    </div>
-  </details>
-
-  <section class="card">
-    <div class="field">
-      <label for="goal">Görev</label>
-      <textarea id="goal" placeholder="Örn. Konya'daki sanayi yatırımlarını araştır"></textarea>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <label class="toggle" for="useWeb" style="margin:0; color:var(--text); font-size:1rem">
-        <input id="useWeb" type="checkbox"> Web araştırması
-      </label>
-      <button id="run" type="button">Çalıştır</button>
-    </div>
-  </section>
-
-  <section id="statusCard" class="card" hidden>
-    <div class="status"><span class="spinner" aria-hidden="true"></span><span id="statusText" role="status"></span></div>
-  </section>
-
-  <section id="outCard" class="card" hidden>
-    <div id="out" class="result"></div>
-    <p id="outMeta" class="meta"></p>
-    <div class="row" style="margin-top:14px">
-      <button id="copy" type="button" class="ghost">Kopyala</button>
-      <button id="resume" type="button" hidden>Kaldığı yerden devam et</button>
-    </div>
-  </section>
-
-  <section id="histCard" class="card" hidden>
-    <h2>Son görevler</h2>
-    <ul id="hist" class="hist"></ul>
-  </section>
-</main>
+<div class="stage" id="stage">
+  <svg viewBox="0 0 200 300" role="img" aria-label="Sirius robot karakteri" id="robot">
+    <defs>
+      <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--body2)"/><stop offset="1" stop-color="var(--body)"/></linearGradient>
+    </defs>
+    <ellipse class="halo glow" cx="100" cy="150" rx="92" ry="132"/>
+    <g class="float">
+      <!-- bacaklar -->
+      <rect x="68" y="228" width="24" height="52" rx="10" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
+      <rect x="108" y="228" width="24" height="52" rx="10" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
+      <rect x="60" y="272" width="38" height="14" rx="7" fill="#33466e"/>
+      <rect x="102" y="272" width="38" height="14" rx="7" fill="#33466e"/>
+      <!-- kollar -->
+      <g class="armL"><rect x="26" y="150" width="22" height="70" rx="11" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/><circle cx="37" cy="224" r="10" fill="#33466e"/></g>
+      <g class="armR"><rect x="152" y="150" width="22" height="70" rx="11" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/><circle cx="163" cy="224" r="10" fill="#33466e"/></g>
+      <!-- gövde -->
+      <rect x="52" y="142" width="96" height="100" rx="26" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
+      <circle cx="100" cy="190" r="13" class="glow" opacity="0.9"/>
+      <circle cx="100" cy="190" r="6" fill="#0b1220" opacity="0.5"/>
+      <!-- boyun -->
+      <rect x="90" y="128" width="20" height="18" rx="6" fill="#33466e"/>
+      <!-- kafa -->
+      <g class="head">
+        <line x1="100" y1="18" x2="100" y2="38" stroke="#33466e" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="100" cy="14" r="7" class="glow"/>
+        <rect x="48" y="36" width="104" height="94" rx="34" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
+        <rect x="60" y="52" width="80" height="50" rx="22" fill="#0b1220"/>
+        <g class="eyes">
+          <ellipse class="eye glow" cx="82" cy="72" rx="9" ry="10"/>
+          <ellipse class="eye glow" cx="118" cy="72" rx="9" ry="10" style="animation-delay:.02s"/>
+        </g>
+        <rect class="mouth glow" id="mouth" x="86" y="90" width="28" height="5" rx="2.5"/>
+        <circle cx="44" cy="82" r="7" fill="#33466e"/><circle cx="156" cy="82" r="7" fill="#33466e"/>
+      </g>
+    </g>
+  </svg>
+</div>
+<div class="status" id="status" aria-live="polite">Hazır</div>
+<div class="log" id="log" aria-live="polite"></div>
+<div class="bar">
+  <div class="chips">
+    <button class="chip" id="chipResearch" type="button" aria-pressed="false">Araştır</button>
+    <button class="chip" id="chipRemember" type="button" aria-pressed="false">Hatırla</button>
+    <button class="chip" id="chipVoice" type="button" aria-pressed="true">Sesli cevap</button>
+  </div>
+  <div class="row">
+    <button class="btn mic" id="mic" type="button" aria-label="Konuş" aria-pressed="false" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <textarea id="input" rows="1" placeholder="Yaz ya da konuş" enterkeyhint="send" autocomplete="off"></textarea>
+    <button class="btn send" id="send" type="button" aria-label="Gönder">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </div>
+</div>
+<div class="gate" id="gate"><div><h2>Anahtar yok</h2><p>Bu telefonda Sirius'un anahtarı kayıtlı değil. Claude sohbetinde sana verdiğim <strong>bağlantıya</strong> bas, anahtar kendiliğinden kaydolur.</p></div></div>
 
 <script>
 (function () {
   "use strict";
+  var API = "https://qtrwimtdslettptndhyt.supabase.co/functions/v1/sirius-chat";
   var $ = function (id) { return document.getElementById(id); };
-  var LS = { url: "sirius.url", key: "sirius.key", hist: "sirius.hist" };
-  var STEP_TR = { manager: "Yönetici", research: "Araştırma", analyst: "Analist", auditor: "Denetçi" };
-  var current = null; // ekranda gösterilen görev {id, goal, web, status, result, at}
-  var busy = false;
+  var LSK = "sirius.key";
 
   function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
-  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* sessizce geç */ } }
+  function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
-    });
-  }
-  function inline(s) {
-    s = esc(s);
-    s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-    s = s.replace(/\*([^*\s][^*]*)\*/g, "<em>$1</em>");
-    s = s.replace(/(https:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
-    return s;
-  }
-  function render(text) {
-    var html = "", inList = false;
-    String(text).split("\n").forEach(function (raw) {
-      var l = raw.replace(/\s+$/, "");
-      var li = l.match(/^\s*[*-]\s+(.*)$/);
-      if (li) {
-        if (!inList) { html += "<ul>"; inList = true; }
-        html += "<li>" + inline(li[1]) + "</li>";
-        return;
-      }
-      if (inList) { html += "</ul>"; inList = false; }
-      if (!l.trim()) return;
-      var h = l.match(/^#{1,4}\s+(.*)$/);
-      html += h ? "<h3>" + inline(h[1]) + "</h3>" : "<p>" + inline(l) + "</p>";
-    });
-    if (inList) html += "</ul>";
-    return html;
-  }
-
-  function loadHist() {
-    try { var a = JSON.parse(lsGet(LS.hist) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; }
-  }
-  function saveHist(list) { lsSet(LS.hist, JSON.stringify(list.slice(0, 8))); }
-  function upsertHist(item) {
-    var list = loadHist().filter(function (x) { return x.id !== item.id; });
-    list.unshift(item);
-    saveHist(list);
-    drawHist();
-  }
-  function drawHist() {
-    var list = loadHist(), ul = $("hist");
-    ul.textContent = "";
-    $("histCard").hidden = list.length === 0;
-    list.forEach(function (it) {
-      var li = document.createElement("li");
-      var b = document.createElement("button");
-      b.type = "button";
-      var g = document.createElement("span"); g.className = "g"; g.textContent = it.goal;
-      var s = document.createElement("span"); s.className = "s " + it.status;
-      var label = it.status === "done" ? "Tamamlandı" : it.status === "failed" ? "Yarım kaldı" : "Çalışıyor";
-      s.textContent = label + " · " + new Date(it.at).toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-      b.appendChild(g); b.appendChild(s);
-      b.addEventListener("click", function () { show(it); window.scrollTo({ top: 0, behavior: "smooth" }); });
-      li.appendChild(b); ul.appendChild(li);
-    });
-  }
-
-  function show(it) {
-    current = it;
-    $("outCard").hidden = false;
-    var out = $("out");
-    if (it.status === "done") {
-      out.innerHTML = render(it.result || "");
-      $("resume").hidden = true;
-      $("copy").hidden = false;
-    } else {
-      var p = document.createElement("p"); p.className = "err";
-      p.textContent = it.error || "Görev yarım kaldı.";
-      out.textContent = ""; out.appendChild(p);
-      var d = document.createElement("p");
-      d.textContent = "Biten aşamalar kaydedildi. Devam edince yalnızca kalan aşamalar çalışır.";
-      out.appendChild(d);
-      $("resume").hidden = !it.id;
-      $("copy").hidden = true;
+  // Anahtar bağlantıdan gelir: .../#k=ANAHTAR  (yapıştırma yok, adres çubuğundan da temizlenir)
+  (function () {
+    var m = (location.hash || "").match(/[#&]k=([A-Za-z0-9\-]+)/);
+    if (m) {
+      lsSet(LSK, m[1]);
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
     }
-    $("outMeta").textContent = it.id ? "görev no: " + it.id : "";
-  }
+  })();
+  var KEY = lsGet(LSK) || "";
+  if (!KEY) $("gate").classList.add("on");
 
-  function setBusy(on, text) {
-    busy = on;
-    $("run").disabled = on; $("resume").disabled = on;
-    $("statusCard").hidden = !on;
-    if (on) $("statusText").textContent = text;
-  }
+  var stage = $("stage"), mouth = $("mouth");
+  var mode = null;          // null | "research" | "remember"
+  var voiceOn = lsGet("sirius.voice") !== "0";
+  var busy = false, mouthTimer = null;
 
-  var timer = null;
-  function startTimer(prefix) {
-    var t0 = Date.now();
-    function tick() {
-      var s = Math.round((Date.now() - t0) / 1000);
-      $("statusText").textContent = prefix + " " + s + " sn";
+  function setState(s, text) {
+    stage.className = "stage state-" + s;
+    $("status").textContent = text || ({ idle: "Hazır", listening: "Dinliyorum…", thinking: "Düşünüyorum…", speaking: "Konuşuyorum" }[s]);
+  }
+  setState("idle");
+
+  function linkify(parent, text) {
+    var re = /(https:\/\/[^\s)]+)/g, last = 0, m;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)));
+      var a = document.createElement("a");
+      a.href = m[1]; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = m[1];
+      parent.appendChild(a);
+      last = m.index + m[1].length;
     }
-    tick(); timer = setInterval(tick, 1000);
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)));
   }
-  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
-
-  function conn() {
-    return { url: ($("fnUrl").value || "").trim(), key: ($("fnKey").value || "").trim() };
+  function add(cls, text) {
+    var d = document.createElement("div");
+    d.className = "msg " + cls;
+    if (cls === "bot") linkify(d, text); else d.textContent = text;
+    $("log").appendChild(d);
+    $("log").scrollTop = $("log").scrollHeight;
+    return d;
   }
 
-  async function call(payload, goalForHist) {
-    var c = conn();
-    if (!/^https:\/\//.test(c.url) || !c.key) {
-      $("conn").open = true;
-      $("connNote").textContent = "Önce adres ve şifreyi gir.";
-      return;
-    }
-    if (busy) return;
-    setBusy(true, "");
-    startTimer("Çalışıyor, yönetici → araştırma → analist → denetçi.");
-    var ctrl = new AbortController();
-    var to = setTimeout(function () { ctrl.abort(); }, 170000);
-    var body = Object.assign({ key: c.key }, payload);
+  async function call(payload) {
+    payload.key = KEY;
+    var r = await fetch(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+    if (r.status === 401) throw new Error("Anahtar geçersiz. Sohbetteki bağlantıya yeniden bas.");
+    return r.json();
+  }
+
+  // Konuşma (iOS için ilk dokunuşta kilidi aç)
+  var voices = [];
+  function loadVoices() { try { voices = speechSynthesis.getVoices() || []; } catch (e) {} }
+  if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+  function unlockSpeech() {
+    try { var u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u); } catch (e) {}
+  }
+  function trVoice() {
+    for (var i = 0; i < voices.length; i++) if (/^tr/i.test(voices[i].lang)) return voices[i];
+    return null;
+  }
+  function stopMouth() { if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; } mouth.style.transform = "scaleY(1)"; }
+  function speak(text) {
+    if (!voiceOn || !("speechSynthesis" in window)) { setState("idle"); return; }
     try {
-      var res = await fetch(c.url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: ctrl.signal
-      });
-      var data;
-      try { data = await res.json(); } catch (e) { data = null; }
-      if (!data) throw new Error("Fonksiyondan okunabilir cevap gelmedi (HTTP " + res.status + ").");
-      if (data.ok) {
-        var item = { id: data.task_id, goal: goalForHist, web: !!payload.use_web, status: "done", result: data.result, at: Date.now() };
-        upsertHist(item); show(item);
-      } else if (data.task_id) {
-        var failed = data.failed_step ? (STEP_TR[data.failed_step] || data.failed_step) + " aşamasında hata: " : "";
-        var it2 = { id: data.task_id, goal: goalForHist, web: !!payload.use_web, status: "failed", error: failed + (data.error || "bilinmeyen hata"), at: Date.now() };
-        upsertHist(it2); show(it2);
-      } else {
-        throw new Error(data.error || ("HTTP " + res.status));
-      }
-    } catch (e) {
-      var msg = e && e.name === "AbortError"
-        ? "Zaman aşımı. Görev sunucuda sürüyor olabilir, birazdan 'Son görevler'den kontrol et."
-        : (e && e.message ? e.message : "Bağlantı kurulamadı.");
-      if (e instanceof TypeError) msg = "Bağlantı kurulamadı. Adresi ve internetini kontrol et.";
-      show({ status: "failed", error: msg, goal: goalForHist, at: Date.now() });
-    } finally {
-      clearTimeout(to); stopTimer(); setBusy(false);
-    }
+      speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text.slice(0, 600));
+      u.lang = "tr-TR"; var v = trVoice(); if (v) u.voice = v; u.rate = 1.02;
+      u.onstart = function () {
+        setState("speaking");
+        stopMouth();
+        mouthTimer = setInterval(function () { mouth.style.transform = "scaleY(" + (1 + Math.random() * 3.2).toFixed(2) + ")"; }, 110);
+      };
+      var done = function () { stopMouth(); setState("idle"); };
+      u.onend = done; u.onerror = done;
+      speechSynthesis.speak(u);
+    } catch (e) { setState("idle"); }
   }
 
-  $("run").addEventListener("click", function () {
-    var goal = ($("goal").value || "").trim();
-    if (!goal) { $("goal").focus(); return; }
-    call({ goal: goal, use_web: $("useWeb").checked }, goal);
-  });
-  $("resume").addEventListener("click", function () {
-    if (current && current.id) call({ task_id: current.id, use_web: !!current.web }, current.goal);
-  });
-  $("copy").addEventListener("click", async function () {
-    if (!current || !current.result) return;
-    var btn = $("copy");
-    try { await navigator.clipboard.writeText(current.result); btn.textContent = "Kopyalandı"; }
-    catch (e) {
-      var r = document.createRange(); r.selectNodeContents($("out"));
-      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
-      btn.textContent = "Seçildi, kopyala";
-    }
-    setTimeout(function () { btn.textContent = "Kopyala"; }, 2000);
-  });
-  $("saveConn").addEventListener("click", function () {
-    var c = conn();
-    if (!/^https:\/\//.test(c.url) || !c.key) { $("connNote").textContent = "Adres https ile başlamalı, şifre boş olmamalı."; return; }
-    lsSet(LS.url, c.url); lsSet(LS.key, c.key);
-    $("connNote").textContent = "Kaydedildi.";
-    $("conn").open = false;
+  async function send(text) {
+    text = (text || "").trim();
+    if (!text || busy || !KEY) return;
+    busy = true; $("send").disabled = true;
+    unlockSpeech();
+    var action = mode === "research" ? "research" : mode === "remember" ? "remember" : "chat";
+    add("user", (action === "research" ? "Araştır: " : action === "remember" ? "Hatırla: " : "") + text);
+    $("input").value = ""; autosize();
+    setMode(null);
+    setState("thinking", action === "research" ? "Araştırıyorum, 1 dakika sürebilir…" : "Düşünüyorum…");
+    try {
+      var j = await call({ action: action, message: text });
+      if (!j.ok) throw new Error(j.error || "Cevap gelmedi");
+      add("bot", j.reply);
+      if (j.research) { speak("Araştırma bitti hacı, ekrana yazdım."); }
+      else speak(j.reply);
+      if (!voiceOn || !("speechSynthesis" in window)) setState("idle");
+    } catch (e) {
+      add("err", String(e.message || e));
+      setState("idle");
+    } finally { busy = false; $("send").disabled = false; }
+  }
+
+  function setMode(m) {
+    mode = (mode === m) ? null : m;
+    $("chipResearch").setAttribute("aria-pressed", String(mode === "research"));
+    $("chipRemember").setAttribute("aria-pressed", String(mode === "remember"));
+    $("input").placeholder = mode === "research" ? "Neyi araştırayım?" : mode === "remember" ? "Neyi hatırlayayım?" : "Yaz ya da konuş";
+  }
+  $("chipResearch").addEventListener("click", function () { setMode("research"); });
+  $("chipRemember").addEventListener("click", function () { setMode("remember"); });
+  function paintVoice() { $("chipVoice").setAttribute("aria-pressed", String(voiceOn)); }
+  paintVoice();
+  $("chipVoice").addEventListener("click", function () {
+    voiceOn = !voiceOn; lsSet("sirius.voice", voiceOn ? "1" : "0"); paintVoice();
+    if (!voiceOn) { try { speechSynthesis.cancel(); } catch (e) {} stopMouth(); setState("idle"); }
   });
 
-  var u = lsGet(LS.url), k = lsGet(LS.key);
-  if (u) $("fnUrl").value = u;
-  if (k) $("fnKey").value = k;
-  $("conn").open = !(u && k);
-  drawHist();
+  function autosize() { var t = $("input"); t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 120) + "px"; }
+  $("input").addEventListener("input", autosize);
+  $("input").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send($("input").value); }
+  });
+  $("send").addEventListener("click", function () { send($("input").value); });
+
+  // Mikrofon: destekleyen tarayıcılarda; iPhone'da ana ekran modunda çalışmayabilir, klavye mikrofonu her zaman çalışır
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = null, listening = false;
+  if (SR) {
+    $("mic").hidden = false;
+    $("mic").addEventListener("click", function () {
+      if (busy) return;
+      unlockSpeech();
+      if (listening) { try { rec.stop(); } catch (e) {} return; }
+      try {
+        rec = new SR(); rec.lang = "tr-TR"; rec.interimResults = true; rec.continuous = false;
+        var finalText = "";
+        rec.onstart = function () { listening = true; $("mic").setAttribute("aria-pressed", "true"); setState("listening"); };
+        rec.onresult = function (ev) {
+          var t = ""; for (var i = 0; i < ev.results.length; i++) t += ev.results[i][0].transcript;
+          finalText = t; $("input").value = t; autosize();
+        };
+        rec.onerror = function (ev) {
+          if (ev.error === "not-allowed" || ev.error === "service-not-allowed") add("err", "Mikrofon izni verilmedi. Klavyedeki mikrofonu kullanabilirsin.");
+        };
+        rec.onend = function () {
+          listening = false; $("mic").setAttribute("aria-pressed", "false"); setState("idle");
+          if (finalText.trim()) send(finalText);
+        };
+        rec.start();
+      } catch (e) { add("err", "Mikrofon başlamadı. Klavyedeki mikrofonu kullanabilirsin."); }
+    });
+  }
+
+  // Önceki konuşma
+  (async function () {
+    if (!KEY) return;
+    try {
+      var j = await call({ action: "history" });
+      if (j.ok && j.messages && j.messages.length) {
+        j.messages.slice(-8).forEach(function (m) { add(m.role === "user" ? "user" : "bot", m.content); });
+      } else {
+        add("bot", "Selam hacı, ben Sirius. Yaz ya da konuş.");
+      }
+    } catch (e) { add("err", "Bağlanamadım: " + (e.message || e)); }
+  })();
+
+  if ("serviceWorker" in navigator) { /* çevrimdışı gerekmiyor, bilerek kayıtlı değil */ }
 })();
 </script>
 </body>
