@@ -62,64 +62,16 @@
   .gate p { max-width: 320px; color: var(--muted); }
   .gate strong { color: var(--text); }
 
-  /* karakter */
-  .float { animation: float 4s ease-in-out infinite; transform-origin: 50% 100%; }
-  @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-  .eye { transform-box: fill-box; transform-origin: center; animation: blink 5s infinite; }
-  @keyframes blink { 0%, 94%, 100% { transform: scaleY(1); } 96.5% { transform: scaleY(0.08); } }
-  .mouth { transform-box: fill-box; transform-origin: center; transition: transform 0.08s; }
-  .glow { fill: var(--glow); transition: fill 0.3s; }
-  .state-listening .glow { fill: var(--bad); }
-  .state-thinking .glow { fill: var(--warn); }
-  .state-thinking .eyes { animation: scan 1.2s ease-in-out infinite; }
-  @keyframes scan { 0%,100% { transform: translateX(-4px); } 50% { transform: translateX(4px); } }
-  .state-speaking .armL { animation: wave 0.9s ease-in-out infinite; transform-box: fill-box; transform-origin: 90% 10%; }
-  .state-speaking .armR { animation: wave 0.9s ease-in-out infinite reverse; transform-box: fill-box; transform-origin: 10% 10%; }
-  @keyframes wave { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-14deg); } }
-  .state-listening .head { animation: tilt 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
-  @keyframes tilt { 0%,100% { transform: rotate(-2deg); } 50% { transform: rotate(3deg); } }
-  .halo { opacity: 0.18; transition: opacity 0.3s; }
-  .state-speaking .halo, .state-listening .halo { opacity: 0.45; }
-  @media (prefers-reduced-motion: reduce) { .float, .eye, .state-thinking .eyes, .state-speaking .armL, .state-speaking .armR, .state-listening .head { animation: none; } }
+  /* holografik çekirdek */
+  .stage { position: relative; }
+  #orb { width: min(72vw, 300px); height: min(72vw, 300px); max-height: 36dvh; max-width: 36dvh; display: block; }
+  .clock { position: absolute; left: max(16px, env(safe-area-inset-left, 0px)); top: 6px; font-size: 0.6875rem; letter-spacing: 0.1em; color: #4fb8aa; line-height: 1.5; white-space: pre; }
 </style>
 </head>
 <body>
 <div class="stage" id="stage">
-  <svg viewBox="0 0 200 300" role="img" aria-label="Sirius robot karakteri" id="robot">
-    <defs>
-      <linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--body2)"/><stop offset="1" stop-color="var(--body)"/></linearGradient>
-    </defs>
-    <ellipse class="halo glow" cx="100" cy="150" rx="92" ry="132"/>
-    <g class="float">
-      <!-- bacaklar -->
-      <rect x="68" y="228" width="24" height="52" rx="10" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
-      <rect x="108" y="228" width="24" height="52" rx="10" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
-      <rect x="60" y="272" width="38" height="14" rx="7" fill="#33466e"/>
-      <rect x="102" y="272" width="38" height="14" rx="7" fill="#33466e"/>
-      <!-- kollar -->
-      <g class="armL"><rect x="26" y="150" width="22" height="70" rx="11" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/><circle cx="37" cy="224" r="10" fill="#33466e"/></g>
-      <g class="armR"><rect x="152" y="150" width="22" height="70" rx="11" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/><circle cx="163" cy="224" r="10" fill="#33466e"/></g>
-      <!-- gövde -->
-      <rect x="52" y="142" width="96" height="100" rx="26" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
-      <circle cx="100" cy="190" r="13" class="glow" opacity="0.9"/>
-      <circle cx="100" cy="190" r="6" fill="#0b1220" opacity="0.5"/>
-      <!-- boyun -->
-      <rect x="90" y="128" width="20" height="18" rx="6" fill="#33466e"/>
-      <!-- kafa -->
-      <g class="head">
-        <line x1="100" y1="18" x2="100" y2="38" stroke="#33466e" stroke-width="4" stroke-linecap="round"/>
-        <circle cx="100" cy="14" r="7" class="glow"/>
-        <rect x="48" y="36" width="104" height="94" rx="34" fill="url(#gBody)" stroke="#33466e" stroke-width="2"/>
-        <rect x="60" y="52" width="80" height="50" rx="22" fill="#0b1220"/>
-        <g class="eyes">
-          <ellipse class="eye glow" cx="82" cy="72" rx="9" ry="10"/>
-          <ellipse class="eye glow" cx="118" cy="72" rx="9" ry="10" style="animation-delay:.02s"/>
-        </g>
-        <rect class="mouth glow" id="mouth" x="86" y="90" width="28" height="5" rx="2.5"/>
-        <circle cx="44" cy="82" r="7" fill="#33466e"/><circle cx="156" cy="82" r="7" fill="#33466e"/>
-      </g>
-    </g>
-  </svg>
+  <canvas id="orb" role="img" aria-label="Sirius holografik çekirdek"></canvas>
+  <div class="clock" id="clock" aria-hidden="true"></div>
 </div>
 <div class="status" id="status" aria-live="polite">Hazır</div>
 <div class="log" id="log" aria-live="polite"></div>
@@ -162,13 +114,14 @@
   var KEY = lsGet(LSK) || "";
   if (!KEY) $("gate").classList.add("on");
 
-  var stage = $("stage"), mouth = $("mouth");
+  var stage = $("stage");
   var mode = null;          // null | "research" | "remember"
   var voiceOn = lsGet("sirius.voice") !== "0";
   var busy = false, mouthTimer = null;
 
+  var orbState = "idle";
   function setState(s, text) {
-    stage.className = "stage state-" + s;
+    orbState = s;
     $("status").textContent = text || ({ idle: "Hazır", listening: "Dinliyorum…", thinking: "Düşünüyorum…", speaking: "Konuşuyorum" }[s]);
   }
   setState("idle");
@@ -211,20 +164,25 @@
     for (var i = 0; i < voices.length; i++) if (/^tr/i.test(voices[i].lang)) return voices[i];
     return null;
   }
-  function stopMouth() { if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; } mouth.style.transform = "scaleY(1)"; }
+  var amp = 0, ampTarget = 0;
+  function stopMouth() { if (mouthTimer) { clearInterval(mouthTimer); mouthTimer = null; } ampTarget = 0; }
+  var speakId = 0;
   function speak(text) {
     if (!voiceOn || !("speechSynthesis" in window)) { setState("idle"); return; }
     try {
       speechSynthesis.cancel();
       var u = new SpeechSynthesisUtterance(text.slice(0, 600));
       u.lang = "tr-TR"; var v = trVoice(); if (v) u.voice = v; u.rate = 1.02;
-      u.onstart = function () {
-        setState("speaking");
-        stopMouth();
-        mouthTimer = setInterval(function () { mouth.style.transform = "scaleY(" + (1 + Math.random() * 3.2).toFixed(2) + ")"; }, 110);
+      var started = false, safety = null, myId = ++speakId;
+      var begin = function () {
+        if (started) return; started = true;
+        setState("speaking"); stopMouth();
+        mouthTimer = setInterval(function () { ampTarget = 0.35 + Math.random() * 0.65; }, 110);
       };
-      var done = function () { stopMouth(); setState("idle"); };
-      u.onend = done; u.onerror = done;
+      var done = function () { if (myId !== speakId) return; if (safety) { clearTimeout(safety); safety = null; } stopMouth(); setState("idle"); };
+      u.onstart = begin; u.onend = done; u.onerror = done;
+      begin();
+      safety = setTimeout(done, Math.max(5000, text.slice(0, 600).length * 110 + 3000));
       speechSynthesis.speak(u);
     } catch (e) { setState("idle"); }
   }
@@ -302,6 +260,94 @@
       } catch (e) { add("err", "Mikrofon başlamadı. Klavyedeki mikrofonu kullanabilirsin."); }
     });
   }
+
+
+  // Holografik çekirdek çizimi
+  (function () {
+    var cv = $("orb"), cx2 = cv.getContext("2d"), t = 0, last = 0;
+    var reduce = false;
+    try { reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) {}
+    var spin = 1, hue = [80, 235, 210], hueT = [80, 235, 210];
+    var ringDefs = [ { r: 0.205, w: 0.007, a: 0.9, v: 0.9 }, { r: 0.28, w: 0.017, a: 0.7, v: -0.6 }, { r: 0.36, w: 0.007, a: 0.6, v: 0.45 }, { r: 0.44, w: 0.026, a: 0.35, v: -0.3 } ];
+    function size() {
+      var d = window.devicePixelRatio || 1, w = cv.clientWidth || 280;
+      cv.width = Math.round(w * d); cv.height = Math.round(w * d);
+    }
+    size(); window.addEventListener("resize", size);
+    function rgba(c, a) { return "rgba(" + Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]) + "," + a + ")"; }
+    function frame(now) {
+      var dt = Math.min(0.05, (now - last) / 1000 || 0.016); last = now;
+      if (reduce) dt *= 0.3;
+      var st = orbState;
+      var targetSpin = st === "thinking" ? 3.4 : st === "speaking" ? 1.6 : st === "listening" ? 0.35 : 1;
+      spin += (targetSpin - spin) * Math.min(1, dt * 3);
+      hueT = st === "thinking" ? [255, 190, 90] : st === "listening" ? [110, 200, 255] : [80, 235, 210];
+      for (var i = 0; i < 3; i++) hue[i] += (hueT[i] - hue[i]) * Math.min(1, dt * 4);
+      amp += (ampTarget - amp) * Math.min(1, dt * 14);
+      t += dt;
+      var W = cv.width, c = W / 2, R = W;
+      cx2.clearRect(0, 0, W, W);
+      var breathe = 1 + Math.sin(t * 1.6) * 0.03 + amp * 0.12;
+      var g = cx2.createRadialGradient(c, c, 0, c, c, R * 0.5);
+      g.addColorStop(0, rgba(hue, 0.95)); g.addColorStop(0.22, rgba(hue, 0.32)); g.addColorStop(1, rgba(hue, 0));
+      cx2.fillStyle = g; cx2.beginPath(); cx2.arc(c, c, R * 0.5, 0, 6.2832); cx2.fill();
+      cx2.fillStyle = rgba(hue, 1); cx2.beginPath(); cx2.arc(c, c, R * 0.085 * breathe, 0, 6.2832); cx2.fill();
+      cx2.fillStyle = "rgba(255,255,255,0.92)"; cx2.beginPath(); cx2.arc(c, c, R * 0.03, 0, 6.2832); cx2.fill();
+      if (st === "listening") {
+        cx2.strokeStyle = "rgba(255,120,120," + (0.35 + Math.sin(t * 4) * 0.2) + ")"; cx2.lineWidth = R * 0.006;
+        cx2.beginPath(); cx2.arc(c, c, R * 0.15, 0, 6.2832); cx2.stroke();
+      }
+      for (var k = 0; k < ringDefs.length; k++) {
+        var rd = ringDefs[k], segs = st === "thinking" ? 6 : 4;
+        var pulse = 1 + amp * 0.05 * (k + 1);
+        cx2.lineWidth = rd.w * R; cx2.lineCap = "butt";
+        cx2.strokeStyle = rgba(hue, rd.a);
+        for (var j = 0; j < segs; j++) {
+          var a0 = (j / segs) * 6.2832 + t * rd.v * spin + k * 0.9;
+          var len = 6.2832 / segs * (k % 2 ? 0.55 : 0.7);
+          cx2.beginPath(); cx2.arc(c, c, rd.r * R * pulse, a0, a0 + len); cx2.stroke();
+        }
+      }
+      cx2.strokeStyle = rgba(hue, 0.25); cx2.lineWidth = Math.max(1, R * 0.003);
+      for (var q = 0; q < 48; q++) {
+        var an = q / 48 * 6.2832 + t * 0.05 * spin, r1 = R * 0.487, r2 = R * (q % 4 ? 0.5 : 0.515);
+        if (r2 > R * 0.5) r2 = R * 0.5;
+        cx2.beginPath(); cx2.moveTo(c + Math.cos(an) * r1, c + Math.sin(an) * r1); cx2.lineTo(c + Math.cos(an) * r2, c + Math.sin(an) * r2); cx2.stroke();
+      }
+      if (st === "speaking") {
+        for (var w = 1; w <= 3; w++) {
+          var ph = ((t * 0.9 + w / 3) % 1);
+          cx2.strokeStyle = rgba(hue, (1 - ph) * 0.5 * (0.3 + amp)); cx2.lineWidth = R * 0.006;
+          cx2.beginPath(); cx2.arc(c, c, R * (0.1 + ph * 0.38), 0, 6.2832); cx2.stroke();
+        }
+        cx2.strokeStyle = "rgba(150,255,235,0.9)"; cx2.lineWidth = R * 0.01; cx2.beginPath();
+        for (var x = 0; x <= 80; x++) {
+          var u = x / 80, env = Math.sin(u * 3.1416);
+          var y = Math.sin(u * 28 + t * 14) * Math.sin(u * 9 - t * 5) * env * amp * R * 0.12;
+          if (x === 0) cx2.moveTo(R * 0.12 + u * R * 0.76, c + y); else cx2.lineTo(R * 0.12 + u * R * 0.76, c + y);
+        }
+        cx2.stroke();
+      }
+      if (st === "thinking") {
+        cx2.fillStyle = rgba(hue, 0.9);
+        for (var n = 0; n < 40; n++) {
+          var aa = n * 2.4 + t * 1.6 * (n % 2 ? 1 : -1), rr = R * (0.1 + ((n * 37) % 100) / 100 * 0.3);
+          cx2.beginPath(); cx2.arc(c + Math.cos(aa) * rr, c + Math.sin(aa) * rr, R * 0.005, 0, 6.2832); cx2.fill();
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    // Tarih ve saat
+    function tick() {
+      var d = new Date();
+      var gun = d.toLocaleDateString("tr-TR", { day: "numeric", month: "long" }).toUpperCase();
+      var saat = d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+      $("clock").textContent = gun + "\n" + saat;
+    }
+    tick(); setInterval(tick, 20000);
+  })();
 
   // Önceki konuşma
   (async function () {
